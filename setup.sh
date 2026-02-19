@@ -34,6 +34,11 @@ chmod 644 ~/.ssh/id_ed25519.pub
 ssh-add ~/.ssh/id_ed25519
 
 
-#Podmam
+# Podman
 sudo apt install -y podman
-alias docker=podman
+if ! grep -q 'alias docker=podman' ~/.bashrc; then
+    echo "alias docker=podman" >> ~/.bashrc
+    echo "Alias 'docker=podman' wurde zu ~/.bashrc hinzugefügt."
+else
+    echo "Alias 'docker=podman' ist bereits in ~/.bashrc vorhanden."
+fi
