@@ -1,0 +1,60 @@
+services:
+  ollama:
+    image: docker.io/ollama/ollama:rocm
+    container_name: ollama
+    restart: unless-stopped
+    devices:
+      - "/dev/kfd:/dev/kfd"
+      - "/dev/dri:/dev/dri"
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      - HSA_OVERRIDE_GFX_VERSION=10.3.0 # Wichtig für Ryzen 6000/7000 iGPUs
+      - OLLAMA_NUM_PARALLEL=1        # Spart RAM bei großen Modellen
+      - OLLAMA_MAX_LOADED_MODELS=1  # Verhindert, dass der RAM überläuft
+    ports:
+      - "11434:11434"
+
+  quisy-ai:
+    image: docker.io/domoskanonos/quisy-ai:0.5.0
+    container_name: quisy-ai
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - AI_BACKEND=ollama
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - LLM_MODEL=llama3
+      - APP_DIR=/app/data
+      - LOG_LEVEL=INFO
+    volumes:
+      - quisy_ai_data:/app/data
+    depends_on:
+      - ollama
+
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui
+    restart: unless-stopped
+    ports:
+      - "3000:8080"
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - OPENAI_API_BASE_URLS=http://quisy-ai:8000/v1
+      - OPENAI_API_KEYS=sk-dummy
+    volumes:
+      - open-webui_data:/app/backend/data
+
+  dozzle:
+    image: docker.io/amir20/dozzle:latest
+    container_name: dozzle
+    restart: unless-stopped
+    ports:
+      - "9999:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+volumes:
+  ollama_data:
+  open-webui_data:
+  quisy_ai_data:
