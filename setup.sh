@@ -10,11 +10,13 @@ else
     echo "Google Chrome ist bereits installiert, wird übersprungen."
 fi
 
-# Install SSH Client
-if ! command -v ssh &> /dev/null; then
-    sudo apt install -y openssh-client
+# Install SSH Server
+if ! systemctl is-active --quiet ssh; then
+    sudo apt install -y openssh-server
+    sudo systemctl enable ssh
+    sudo systemctl start ssh
 else
-    echo "SSH Client ist bereits installiert, wird übersprungen."
+    echo "SSH Server läuft bereits, wird übersprungen."
 fi
 
 # Install Visual Studio Code
