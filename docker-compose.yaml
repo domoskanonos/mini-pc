@@ -18,7 +18,7 @@ services:
       - OLLAMA_NUM_PARALLEL=1        # Spart RAM bei großen Modellen
       - OLLAMA_MAX_LOADED_MODELS=1  # Verhindert, dass der RAM überläuft
     ports:
-      - "11434:11434"
+      - "8001:11434"
     networks:
       - local
 
@@ -27,7 +27,7 @@ services:
     container_name: quisy-ai
     restart: unless-stopped
     ports:
-      - "8000:8000"
+      - "8002:8000"
     environment:
       - AI_BACKEND=ollama
       - OLLAMA_BASE_URL=http://ollama:11434
@@ -46,7 +46,7 @@ services:
     container_name: open-webui
     restart: unless-stopped
     ports:
-      - "3100:8080"
+      - "8003:8080"
     environment:
       - OLLAMA_BASE_URL=http://ollama:11434
       - OPENAI_API_BASE_URLS=http://quisy-ai:8000/v1
@@ -58,11 +58,11 @@ services:
 
   # --- Dashboard & Tools ---
   flame:
-    image: pawelmalak/flame:multiarch
+    image: docker.io/pawelmalak/flame:multiarch
     container_name: flame
     restart: unless-stopped
     ports:
-      - "80:5005"
+      - "8000:5005"
     volumes:
       - flame_data:/app/data
     environment:
@@ -74,23 +74,23 @@ services:
       - local
 
   dozzle:
-    image: amir20/dozzle:latest
+    image: docker.io/amir20/dozzle:latest
     container_name: dozzle
     restart: unless-stopped
     ports:
-      - "9999:8080"
+      - "8004:8080"
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+      - /run/user/1000/podman/podman.sock:/var/run/docker.sock:ro
     networks:
       - local
 
   filebrowser:
-    image: filebrowser/filebrowser:latest
+    image: docker.io/filebrowser/filebrowser:latest
     container_name: filebrowser
     restart: unless-stopped
     user: "1000:1000"
     ports:
-      - "8001:80"
+      - "8005:80"
     volumes:
       - filebrowser_database:/database
       - filebrowser_config:/config
@@ -102,11 +102,11 @@ services:
 
   # --- RSS ---
   freshrss:
-    image: freshrss/freshrss:latest
+    image: docker.io/freshrss/freshrss:latest
     container_name: freshrss
     restart: unless-stopped
     ports:
-      - "8002:80"
+      - "8006:80"
     volumes:
       - freshrss_data:/var/www/FreshRSS/data
       - freshrss_extensions:/var/www/FreshRSS/extensions
@@ -123,7 +123,7 @@ services:
     container_name: duplicati
     restart: unless-stopped
     ports:
-      - "8200:8200"
+      - "8007:8200"
     volumes:
       - duplicati_config:/config
       #- /mnt/sd_card:/backups
@@ -134,8 +134,6 @@ services:
       - filebrowser_database:/source/filebrowser/database:ro
       - filebrowser_config:/source/filebrowser/config:ro
       - filebrowser_data:/source/filebrowser/data:ro
-      - adguardhome_work:/source/adguardhome/work:ro
-      - adguardhome_conf:/source/adguardhome/conf:ro
       - freshrss_data:/source/freshrss/data:ro
       - freshrss_extensions:/source/freshrss/extensions:ro
     environment:
@@ -144,25 +142,6 @@ services:
       - TZ=Europe/Berlin
       - DUPLICATI__WEBSERVICE_PASSWORD=${DUPLICATI_PASSWORD}
       - SETTINGS_ENCRYPTION_KEY=${DUPLICATI_PASSWORD}
-    networks:
-      - local
-
-  # --- DNS ---
-  adguardhome:
-    image: adguard/adguardhome
-    container_name: adguardhome
-    restart: unless-stopped
-    ports:
-      - "53:53/tcp"
-      - "53:53/udp"
-      - "8003:80/tcp"
-      - "443:443/tcp"
-      - "443:443/udp"
-      - "853:853/tcp"
-      - "3000:3000/tcp"
-    volumes:
-      - adguardhome_work:/opt/adguardhome/work
-      - adguardhome_conf:/opt/adguardhome/conf
     networks:
       - local
 
@@ -175,7 +154,5 @@ volumes:
   filebrowser_config:
   filebrowser_data:
   duplicati_config:
-  adguardhome_work:
-  adguardhome_conf:
   freshrss_data:
   freshrss_extensions:
