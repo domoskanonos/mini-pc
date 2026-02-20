@@ -100,6 +100,23 @@ services:
     networks:
       - local
 
+  # --- RSS ---
+  freshrss:
+    image: freshrss/freshrss:latest
+    container_name: freshrss
+    restart: unless-stopped
+    ports:
+      - "8002:80"
+    volumes:
+      - freshrss_data:/var/www/FreshRSS/data
+      - freshrss_extensions:/var/www/FreshRSS/extensions
+    environment:
+      - TZ=Europe/Berlin
+      - CRON_MIN=1,31
+      - ADMIN_PASSWORD=${FRESHRSS_PASSWORD}
+    networks:
+      - local
+
   # --- Backup ---
   duplicati:
     image: lscr.io/linuxserver/duplicati:latest
@@ -119,6 +136,8 @@ services:
       - filebrowser_data:/source/filebrowser/data:ro
       - adguardhome_work:/source/adguardhome/work:ro
       - adguardhome_conf:/source/adguardhome/conf:ro
+      - freshrss_data:/source/freshrss/data:ro
+      - freshrss_extensions:/source/freshrss/extensions:ro
     environment:
       - PUID=1000
       - PGID=1000
@@ -158,3 +177,5 @@ volumes:
   duplicati_config:
   adguardhome_work:
   adguardhome_conf:
+  freshrss_data:
+  freshrss_extensions:
