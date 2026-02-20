@@ -1,2 +1,2 @@
 #!/bin/bash
-podman-compose -f docker-compose.yaml down
+docker compose -f docker-compose.yaml down
