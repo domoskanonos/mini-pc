@@ -1,4 +1,9 @@
+networks:
+  local:
+    driver: bridge
+
 services:
+  # --- AI Services ---
   ollama:
     image: docker.io/ollama/ollama:rocm
     container_name: ollama
@@ -14,6 +19,8 @@ services:
       - OLLAMA_MAX_LOADED_MODELS=1  # Verhindert, dass der RAM überläuft
     ports:
       - "11434:11434"
+    networks:
+      - local
 
   quisy-ai:
     image: docker.io/domoskanonos/quisy-ai:0.5.0
@@ -31,30 +38,123 @@ services:
       - quisy_ai_data:/app/data
     depends_on:
       - ollama
+    networks:
+      - local
 
   open-webui:
     image: ghcr.io/open-webui/open-webui:main
     container_name: open-webui
     restart: unless-stopped
     ports:
-      - "3000:8080"
+      - "3100:8080"
     environment:
       - OLLAMA_BASE_URL=http://ollama:11434
       - OPENAI_API_BASE_URLS=http://quisy-ai:8000/v1
       - OPENAI_API_KEYS=sk-dummy
     volumes:
       - open-webui_data:/app/backend/data
+    networks:
+      - local
+
+  # --- Dashboard & Tools ---
+  flame:
+    image: pawelmalak/flame:multiarch
+    container_name: flame
+    restart: unless-stopped
+    ports:
+      - "80:5005"
+    volumes:
+      - flame_data:/app/data
+    environment:
+      - BASE_URL=/
+      - PASSWORD=${FLAME_PASSWORD}
+      - PUID=1000
+      - PGID=1000
+    networks:
+      - local
 
   dozzle:
-    image: docker.io/amir20/dozzle:latest
+    image: amir20/dozzle:latest
     container_name: dozzle
     restart: unless-stopped
     ports:
       - "9999:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - local
+
+  filebrowser:
+    image: filebrowser/filebrowser:latest
+    container_name: filebrowser
+    restart: unless-stopped
+    user: "1000:1000"
+    ports:
+      - "8001:80"
+    volumes:
+      - filebrowser_database:/database
+      - filebrowser_config:/config
+      - filebrowser_data:/srv
+    environment:
+      - FILEBROWSER_ADMIN_PASSWORD=${FILEBROWSER_PASSWORD}
+    networks:
+      - local
+
+  # --- Backup ---
+  duplicati:
+    image: lscr.io/linuxserver/duplicati:latest
+    container_name: duplicati
+    restart: unless-stopped
+    ports:
+      - "8200:8200"
+    volumes:
+      - duplicati_config:/config
+      #- /mnt/sd_card:/backups
+      - ollama_data:/source/ollama:ro
+      - quisy_ai_data:/source/quisy-ai:ro
+      - open-webui_data:/source/open-webui:ro
+      - flame_data:/source/flame:ro
+      - filebrowser_database:/source/filebrowser/database:ro
+      - filebrowser_config:/source/filebrowser/config:ro
+      - filebrowser_data:/source/filebrowser/data:ro
+      - adguardhome_work:/source/adguardhome/work:ro
+      - adguardhome_conf:/source/adguardhome/conf:ro
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Berlin
+      - DUPLICATI__WEBSERVICE_PASSWORD=${DUPLICATI_PASSWORD}
+      - SETTINGS_ENCRYPTION_KEY=${DUPLICATI_PASSWORD}
+    networks:
+      - local
+
+  # --- DNS ---
+  adguardhome:
+    image: adguard/adguardhome
+    container_name: adguardhome
+    restart: unless-stopped
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+      - "8003:80/tcp"
+      - "443:443/tcp"
+      - "443:443/udp"
+      - "853:853/tcp"
+      - "3000:3000/tcp"
+    volumes:
+      - adguardhome_work:/opt/adguardhome/work
+      - adguardhome_conf:/opt/adguardhome/conf
+    networks:
+      - local
 
 volumes:
   ollama_data:
   open-webui_data:
   quisy_ai_data:
+  flame_data:
+  filebrowser_database:
+  filebrowser_config:
+  filebrowser_data:
+  duplicati_config:
+  adguardhome_work:
+  adguardhome_conf:
