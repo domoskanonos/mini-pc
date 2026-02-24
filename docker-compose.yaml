@@ -31,7 +31,7 @@ services:
     environment:
       - AI_BACKEND=ollama
       - OLLAMA_BASE_URL=http://ollama:11434
-      - LLM_MODEL=llama3
+      - LLM_MODEL=glm-4.7-flash:q4_K_M
       - APP_DIR=/app/data
       - LOG_LEVEL=INFO
     volumes:
