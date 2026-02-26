@@ -23,15 +23,16 @@ services:
       - local
 
   quisy-ai:
-    image: docker.io/domoskanonos/quisy-ai:0.5.0
+    image: docker.io/domoskanonos/quisy-ai:0.8.6
     container_name: quisy-ai
     restart: unless-stopped
     ports:
       - "8002:8000"
     environment:
       - AI_BACKEND=ollama
-      - OLLAMA_BASE_URL=http://ollama:11434
-      - LLM_MODEL=glm-4.7-flash:q4_K_M
+      - AI_SOURCE=ollama
+      - LLM_BASE_URL=http://ollama:11434
+      - LLM_MODELS=glm-4.7-flash:q4_K_M
       - APP_DIR=/app/data
       - LOG_LEVEL=INFO
     volumes:
@@ -48,9 +49,8 @@ services:
     ports:
       - "8003:8080"
     environment:
-      - OLLAMA_BASE_URL=http://ollama:11434
-      - OPENAI_API_BASE_URLS=http://quisy-ai:8000/v1
-      - OPENAI_API_KEYS=sk-dummy
+      - OLLAMA_BASE_URL=http://quisy-ai:8000
+      - ENABLE_OPENAI_API=false
     volumes:
       - open-webui_data:/app/backend/data
     networks:
