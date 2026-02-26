@@ -23,7 +23,7 @@ services:
       - local
 
   quisy-ai:
-    image: docker.io/domoskanonos/quisy-ai:0.9.0
+    image: docker.io/domoskanonos/quisy-ai:0.11.0
     container_name: quisy-ai
     restart: unless-stopped
     ports:
@@ -53,6 +53,8 @@ services:
       - ENABLE_OPENAI_API=false
     volumes:
       - open-webui_data:/app/backend/data
+    depends_on:
+      - quisy-ai
     networks:
       - local
 
